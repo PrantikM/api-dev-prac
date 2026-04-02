@@ -10,7 +10,7 @@ import time
 app = FastAPI()
 
 class post(BaseModel):
-  Title : str
+  title : str
   content : str
   published : bool = True
 
@@ -46,19 +46,23 @@ async def root():
 
 @app.get("/posts")
 async def posts():
-  return{"data" : my_posts}
+  cursor.execute("""SELECT * FROM posts""")
+  posts = cursor.fetchall()
+  return{"data" : posts}
 
 @app.post("/posts", status_code = status.HTTP_201_CREATED)
-async def create_posts(new_post :post):
-  post_dict = new_post.dict()
-  post_dict["id"] = randrange(0,10000000)
-  my_posts.append(post_dict)
-  return {"data" : post_dict}
+async def create_posts(post :post):
+  cursor.execute("""INSERT INTO posts (title,content,published) VALUES (%s,%s,%s) RETURNING * """,(post.title,post.content,post.published))
+  new_post = cursor.fetchone()
+  conn.commit()
+  return {"data" : new_post}
 
 
 @app.get("/posts/{id}")
 async def get_post(id : int, response : Response):
-  post = findpost(id)
+  cursor.execute("""SELECT* FROM posts WHERE id = %s""",(str(id),))
+  post = cursor.fetchone()
+  print(post)
   if not post :
     raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
     detail = f"post with id: {id} was not found")
