@@ -46,14 +46,14 @@ async def root():
   return{"message": "Hello World"}
 
 
-@app.get("/posts")
+@app.get("/posts", response_model = list[schemas.Post])
 async def get_posts(db: Session = Depends(get_db)):
   # cursor.execute("""SELECT * FROM posts""")
   # posts = cursor.fetchall()
   posts = db.query(models.Post).all()
   return posts
 
-@app.post("/posts", status_code = status.HTTP_201_CREATED)
+@app.post("/posts", status_code = status.HTTP_201_CREATED, response_model = schemas.Post)
 async def create_posts(post :schemas.PostCreate, db: Session = Depends(get_db)):
   # cursor.execute("""INSERT INTO posts (title,content,published) VALUES (%s,%s,%s) RETURNING * """,(post.title,post.content,post.published))
   # new_post = cursor.fetchone()
@@ -65,7 +65,7 @@ async def create_posts(post :schemas.PostCreate, db: Session = Depends(get_db)):
   return  new_post
 
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}", response_model = schemas.Post)
 async def get_post(id : int, response : Response, db: Session = Depends(get_db)):
   # cursor.execute("""SELECT* FROM posts WHERE id = %s""",(str(id),))
   # post = cursor.fetchone()
@@ -90,7 +90,7 @@ async def delete_post(id: int, db: Session = Depends(get_db)):
   return Response(status_code = status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/posts/{id}")
+@app.put("/posts/{id}", response_model = schemas.Post)
 async def update_post(id:int , post : schemas.PostCreate, db: Session = Depends(get_db)):
   # cursor.execute("""UPDATE posts SET title = %s, content = %s, published =%s WHERE id = %s RETURNING *""",
   # (post.title, post.content, post.published,id))
@@ -103,7 +103,7 @@ async def update_post(id:int , post : schemas.PostCreate, db: Session = Depends(
     detail = f"post with id: {id} was not found")
   updated_post.update(post.dict(), synchronize_session = False)
   db.commit()
-  return updated_post.first
+  return updated_post.first()
 
 
 
