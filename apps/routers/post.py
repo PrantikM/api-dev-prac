@@ -25,7 +25,7 @@ async def create_posts(post :schemas.PostCreate, db: Session = Depends(get_db),
   # new_post = cursor.fetchone()
   # conn.commit()
   print(current_user.email)
-  new_post =models.Post(**post.dict())
+  new_post =models.Post(owner_id = current_user.id,**post.dict())
   db.add(new_post)
   db.commit()
   db.refresh(new_post)
@@ -54,6 +54,10 @@ current_user: int = Depends(oauth2.get_current_user)):
   if deleted_post.first() == None:
     raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
     detail = f"post with id: {id} was not found")
+
+  if deleted_post.first().owner_id != current_user.id:
+    raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,
+    detail = f"Not authorized to perform requested action")
   deleted_post.delete(synchronize_session = False)
   db.commit()
   return Response(status_code = status.HTTP_204_NO_CONTENT)
